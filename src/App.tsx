@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react"
-import { api, serverUrl, supabase } from "./lib/supabase"
+import { api, publicAnonKey, serverUrl, supabase } from "./lib/supabase"
 
 type IconName = "grid" | "users" | "calendar" | "pill" | "flask" | "bike" | "chart" | "settings" | "search" | "bell" | "plus" | "arrow"
 type Language = "en" | "am" | "om"
@@ -238,16 +238,16 @@ function Bootstrap({ onComplete, onBack }: { onComplete: (email: string) => void
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Bootstrap-Secret": String(form.get("bootstrapSecret")),
+          apikey: publicAnonKey,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, bootstrapSecret: String(form.get("bootstrapSecret")) }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Bootstrap failed")
       setMessage("Super Admin account created. You can now sign in.")
       window.setTimeout(() => onComplete(body.email), 900)
     } catch (bootstrapError) {
-      setError(bootstrapError instanceof TypeError ? "The MedLink server function is not deployed to this Supabase project yet. Deploy the server function, then try again." : bootstrapError instanceof Error ? bootstrapError.message : "Unable to create the Super Admin account.")
+      setError(bootstrapError instanceof TypeError ? "Could not reach the MedLink server. Check your connection and confirm the latest frontend and Edge Function are deployed. If this persists, inspect the browser console for a CORS or network error." : bootstrapError instanceof Error ? bootstrapError.message : "Unable to create the Super Admin account.")
     }
   }
   return <div className="login-page"><button className="back-button" onClick={onBack}>← Back to website</button><div className="login-card"><div className="brand login-brand"><div className="brand-mark"><span></span><span></span></div><div><strong>MedLink</strong><small>First-time setup</small></div></div><div className="login-copy"><span>ONE-TIME SETUP</span><h1>Create Super Admin</h1><p>Use the bootstrap secret configured on the MedLink server. This setup is available only before the first profile is created.</p></div><form onSubmit={submit}><label>Super Admin email<input name="email" type="email" required placeholder="owner@medlink.et"/></label><label>Full name<input name="fullName" required placeholder="Full name"/></label><label>Username<input name="username" required placeholder="owner"/></label><label>Employee number<input name="employeeNumber" required placeholder="EMP-001"/></label><label>Password<input name="password" type="password" minLength={8} required placeholder="At least 8 characters"/></label><label>Bootstrap secret<input name="bootstrapSecret" type="password" required placeholder="Configured server secret"/></label>{error && <div className="login-error">{error}</div>}{message && <div className="login-success">{message}</div>}<button className="login-submit">Create securely <Icon name="arrow"/></button></form></div></div>

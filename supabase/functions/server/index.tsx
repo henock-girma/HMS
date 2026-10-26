@@ -34,7 +34,7 @@ const rolePermissions: Record<string, string[]> = {
 };
 
 app.use("*", logger(console.log));
-app.use("/*", cors({ origin: "*", allowHeaders: ["Content-Type", "Authorization", "X-Bootstrap-Secret"], allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], maxAge: 600 }));
+app.use("/*", cors({ origin: "*", allowHeaders: ["Content-Type", "Authorization", "apikey"], allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], maxAge: 600 }));
 
 async function caller(c: any) {
   const token = c.req.header("Authorization")?.replace("Bearer ", "");
@@ -217,7 +217,7 @@ app.put(`${prefix}/partner-applications/:id`, async (c) => {
 // as Edge Function secrets, then remove the bootstrap secret after use.
 app.post(`${prefix}/bootstrap`, async (c) => {
   const body = await c.req.json();
-  if (!Deno.env.get("MEDLINK_BOOTSTRAP_SECRET") || c.req.header("X-Bootstrap-Secret") !== Deno.env.get("MEDLINK_BOOTSTRAP_SECRET")) return c.json({ error: "Bootstrap disabled" }, 403);
+  if (!Deno.env.get("MEDLINK_BOOTSTRAP_SECRET") || body.bootstrapSecret !== Deno.env.get("MEDLINK_BOOTSTRAP_SECRET")) return c.json({ error: "Bootstrap disabled" }, 403);
   if (body.email !== Deno.env.get("SUPERADMIN_EMAIL")) return c.json({ error: "Owner email not approved" }, 403);
   const { count } = await supabaseAdmin().from("profiles").select("id", { count: "exact", head: true });
   if (count) return c.json({ error: "System already initialized" }, 409);
